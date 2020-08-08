@@ -20,7 +20,7 @@ setAllInOne = rbind(mrg_train, mrg_test)
 colNames = colnames(setAllInOne)
 mean_and_std = (grepl("activityId" , colNames) | grepl("subjectId" , colNames) | grepl("mean.." , colNames) | grepl("std.." , colNames))
 mean_and_std = (grepl("activityId" , colNames) | grepl("subjectId" , colNames) | grepl("mean.." , colNames) | grepl("std.." , colNames))
-week4assighnment = merge(week4assighnment, activityLabels, by='activityId', all.x=TRUE)
+week4assignment = merge(week4assignment, activityLabels, by='activityId', all.x=TRUE)
 secTidySet <- aggregate(. ~subjectId + activityId, setWithActivityNames, mean)
 secTidySet <- secTidySet[order(secTidySet$subjectId, secTidySet$activityId),]
 write.table(secTidySet, "secTidySet.txt", row.name=FALSE)
