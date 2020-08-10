@@ -1,26 +1,49 @@
 # week4assignment
-xtrain = read.table(file.path(pathdata, "train", "X_train.txt"),header = FALSE)
-ytrain = read.table(file.path(pathdata, "train", "y_train.txt"),header = FALSE)
-subject_train = read.table(file.path(pathdata, "train", "subject_train.txt"),header = FALSE)
-xtest = read.table(file.path(pathdata, "test", "X_test.txt"),header = FALSE)
-ytest = read.table(file.path(pathdata, "test", "y_test.txt"),header = FALSE)
-subject_test = read.table(file.path(pathdata, "test", "subject_test.txt"),header = FALSE)
-features = read.table(file.path(pathdata, "features.txt"),header = FALSE)
-activityLabels = read.table(file.path(pathdata, "activity_labels.txt"),header = FALSE)
-colnames(xtrain) = features[,2]
-colnames(ytrain) = "activityId"
-colnames(subject_train) = "subjectId"
-colnames(xtest) = features[,2]
-colnames(ytest) = "activityId"
-colnames(subject_test) = "subjectId"
-colnames(activityLabels) <- c('activityId','activityType')
-mrg_train = cbind(ytrain, subject_train, xtrain)
-mrg_test = cbind(ytest, subject_test, xtest)
-setAllInOne = rbind(mrg_train, mrg_test)
-colNames = colnames(setAllInOne)
-mean_and_std = (grepl("activityId" , colNames) | grepl("subjectId" , colNames) | grepl("mean.." , colNames) | grepl("std.." , colNames))
-mean_and_std = (grepl("activityId" , colNames) | grepl("subjectId" , colNames) | grepl("mean.." , colNames) | grepl("std.." , colNames))
-week4assignment = merge(week4assignment, activityLabels, by='activityId', all.x=TRUE)
-secTidySet <- aggregate(. ~subjectId + activityId, setWithActivityNames, mean)
-secTidySet <- secTidySet[order(secTidySet$subjectId, secTidySet$activityId),]
-write.table(secTidySet, "secTidySet.txt", row.name=FALSE)
+library(data.table)
+library(dplyr)
+featureNames <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/features.txt")
+activityLabels<- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/activity_labels.txt", header = FALSE)
+subjectTrain <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/train/subject_train.txt", header = FALSE)
+activityTrain <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/train/y_train.txt", header = FALSE)
+featuresTrain <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/train/X_train.txt", header = FALSE)
+subjectTest <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/test/subject_test.txt", header = FALSE)
+activityTest <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/test/y_test.txt", header = FALSE)
+featuresTest <- read.table("getdata_projectfiles_UCI HAR Dataset/UCI HAR Dataset/test/X_test.txt", header = FALSE)
+subject <- rbind(subjectTrain, subjectTest)
+activity <- rbind(activityTrain, activityTest)
+features <- rbind(featuresTrain, featuresTest)
+colnames(features) <- t(featureNames[2])
+colnames(activity) <- "activity"
+colnames(subject) <- "Subject"
+completeData <- cbind(features,activity,subject)
+columnsWithMeanSTD <- grep(".*Mean.*|.*Std.*", names(completeData), ignore.case=TRUE)
+requiredColumns <- c(columnsWithMeanSTD, 562, 563)
+dim(completeData)
+extractedData <- completeData[,requiredColumns]
+dim(extractedData)
+extractedData$activity <- as.character(extractedData$activity)
+for (i in 1:6){
+  extractedData$activity[extractedData$activity == i] <- as.character(activityLabels[i,2])
+}
+extractedData$activity <- as.factor(extractedData$activity)
+names(extractedData)
+names(extractedData)<-gsub("Acc", "Accelerometer", names(extractedData))
+names(extractedData)<-gsub("Gyro", "Gyroscope", names(extractedData))
+names(extractedData)<-gsub("BodyBody", "Body", names(extractedData))
+names(extractedData)<-gsub("Mag", "Magnitude", names(extractedData))
+names(extractedData)<-gsub("^t", "Time", names(extractedData))
+names(extractedData)<-gsub("^f", "Frequency", names(extractedData))
+names(extractedData)<-gsub("tBody", "TimeBody", names(extractedData))
+names(extractedData)<-gsub("-mean()", "Mean", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("-std()", "STD", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("-freq()", "Frequency", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("angle", "Angle", names(extractedData))
+names(extractedData)<-gsub("gravity", "Gravity", names(extractedData))
+names(extractedData)
+extractedData$Subject <- as.factor(extractedData$Subject)
+extractedData <- data.table(extractedData)
+tidyData <- aggregate(. ~Subject + activity, extractedData, mean)
+tidyData <- tidyData[order(tidyData$Subject,tidyData$activity),]
+write.table(tidyData, file = "Tidy.txt", row.names = FALSE)
+
+
